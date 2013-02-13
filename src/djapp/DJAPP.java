@@ -6,7 +6,7 @@ package djapp;
 
 /**
  *
- * @author arjuns
+ * @author arjs1000
  */
 public class DJAPP {
 

@@ -19,6 +19,8 @@ import java.io.*;
 import java.awt.event.*;
 
 import java.awt.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class DJAPP extends JFrame{
 
@@ -29,7 +31,11 @@ public class DJAPP extends JFrame{
         JButton pause;
         JButton stop;
         JButton browse;
+        double trackpos = 0.0;
+        final JLabel title = new JLabel("ZAFC DJ Application - BETA v1.01");
         final JLabel pitch = new JLabel("Pitch");
+        final JLabel tempo = new JLabel("Tempo");
+        final JLabel volume = new JLabel("Volume");
         JFileChooser fc;
         JLabel track;
         SamplePlayer player1;
@@ -41,15 +47,14 @@ public class DJAPP extends JFrame{
         public DJAPP()
         {
                 final AudioContext audioContext = new AudioContext();
-		
-                
-		audioContext.start();
-		
+		final Clock clock = new Clock(audioContext, 200);
                 this.getContentPane().setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
         
-		final JSlider noteSlider = new JSlider(-12,12);  // 2 octave range
-
-		
+            final JSlider noteSlider = new JSlider(-12,12);  // 2 octave range
+            final JSlider volumeSlider = new JSlider(0,100); // 0 - 100 volume used for gain
+            final JSlider tempoSlider = new JSlider(30, 1900);
+            
+            
             play = new JButton("Play");
             pause = new JButton("Pause");
             stop = new JButton("Stop");
@@ -83,6 +88,27 @@ public class DJAPP extends JFrame{
 //                
 //            }
 //        });
+            
+                clock.addMessageListener(
+                    new Bead() {  //using an anonymous class created every time the clock ticks
+                    @Override
+                        public void messageReceived(Bead message) {
+                            if(clock.isBeat())
+                            {
+                                float note = noteSlider.getValue();
+                                float vol = volumeSlider.getValue();
+                                float tempo = 2000 - tempoSlider.getValue();
+                                float playbackRate = PitchRatioCalculator.semitoneRatio(98, note);
+                                player1.getPitchEnvelope().setValue(playbackRate);
+                               
+                                audioContext.out.setGain(vol/100);
+                                clock.getIntervalEnvelope().setValue(tempo);
+                                
+                            }
+                        
+                        
+                       }
+                    });
         
                 play.addActionListener(new ActionListener(){
                 public void actionPerformed(ActionEvent e){
@@ -97,13 +123,27 @@ public class DJAPP extends JFrame{
                         player1 = new SamplePlayer(audioContext, sound);
                     
                         float note = noteSlider.getValue();
-                
+                        float vol = volumeSlider.getValue();
+                        
                         float playbackRate = PitchRatioCalculator.semitoneRatio(98, note);
                         player1.getPitchEnvelope().setValue(playbackRate);
                 
                         player1.setLoopType(SamplePlayer.LoopType.NO_LOOP_FORWARDS);
                         player1.setKillOnEnd(true);
                         audioContext.out.addInput(player1);
+                            float gainLevel  = (float)(vol/100);
+				Gain gain = new Gain(audioContext, 1, new Envelope(audioContext, gainLevel ));
+				
+				// add the sample player to the gain's input
+				gain.addInput(player1);
+				
+                
+                                    gain.setKillListener(player1); 
+                
+				// add the gain to the audio context's output
+                        audioContext.out.addInput(gain);
+                        audioContext.out.addDependent(clock);
+                        
                     }
                     else
                     {
@@ -112,6 +152,7 @@ public class DJAPP extends JFrame{
                 }
                 else
                 {
+                    player1.setPosition(trackpos);
                     player1.pause(false);
                 }
 
@@ -120,7 +161,10 @@ public class DJAPP extends JFrame{
                 
            pause.addActionListener(new ActionListener(){
                 public void actionPerformed(ActionEvent e) {
+                    playCount +=1;
                     player1.pause(true);
+                    trackpos = player1.getPosition();
+                    
                 }
            });
            
@@ -128,6 +172,8 @@ public class DJAPP extends JFrame{
                public void actionPerformed(ActionEvent e) {
                    player1.pause(true);
                    playCount=0;
+                   track.setText("No track selected");
+                   filepath = "NA";
                }
            });
                 
@@ -150,8 +196,15 @@ public class DJAPP extends JFrame{
                         }
                 }
             }); 
+            
+            
+            // GAIN
+            
         
+            audioContext.start();
+            
             this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            this.getContentPane().add(title);
             this.getContentPane().add(play);
             this.getContentPane().add(pause);
             this.getContentPane().add(stop);
@@ -159,6 +212,10 @@ public class DJAPP extends JFrame{
             this.getContentPane().add(browse);
             this.getContentPane().add(pitch);
             this.getContentPane().add(noteSlider);
+            this.getContentPane().add(tempo);
+            this.getContentPane().add(tempoSlider);
+            this.getContentPane().add(volume);
+            this.getContentPane().add(volumeSlider);
         
             this.pack();
 		this.setVisible(true);

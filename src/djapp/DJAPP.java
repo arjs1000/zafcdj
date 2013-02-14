@@ -46,9 +46,25 @@ public class DJAPP extends JFrame{
         
         public DJAPP()
         {
+                this.setTitle("ZAFC DJ Application - BETA v1.01");
                 final AudioContext audioContext = new AudioContext();
 		final Clock clock = new Clock(audioContext, 200);
-                this.getContentPane().setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
+                this.getContentPane().setLayout(new CardLayout());
+                
+                //Where instance variables are declared:
+            JPanel cards;
+            String CARD1 = "Now Playing";
+            String CARD2 = "Mixing";  
+
+//Where the components controlled by the CardLayout are initialized:
+//Create the "cards".
+            JPanel card1 = new JPanel();
+
+            JPanel card2 = new JPanel();
+
+//Create the panel that contains the "cards".
+            
+
         
             final JSlider noteSlider = new JSlider(-12,12);  // 2 octave range
             final JSlider volumeSlider = new JSlider(0,100); // 0 - 100 volume used for gain
@@ -203,20 +219,43 @@ public class DJAPP extends JFrame{
         
             audioContext.start();
             
+            JTabbedPane tabbedPane = new JTabbedPane();
+            
+
+            
             this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            this.getContentPane().add(title);
-            this.getContentPane().add(play);
-            this.getContentPane().add(pause);
-            this.getContentPane().add(stop);
-            this.getContentPane().add(track);
-            this.getContentPane().add(browse);
-            this.getContentPane().add(pitch);
-            this.getContentPane().add(noteSlider);
-            this.getContentPane().add(tempo);
-            this.getContentPane().add(tempoSlider);
-            this.getContentPane().add(volume);
-            this.getContentPane().add(volumeSlider);
-        
+            //this.getContentPane().add(title);
+            card1.add(play);
+            card1.add(pause);
+            card1.add(stop);
+            
+            card1.add(track);
+            card1.add(browse);
+            
+          
+            card2.add(pitch);
+            card2.add(noteSlider);
+            card2.add(tempo);
+            card2.add(tempoSlider);
+            card2.add(volume);
+            card2.add(volumeSlider);
+            
+            ImageIcon icon = null;
+            tabbedPane.addTab("Now Playing", icon, card1,
+                  "Track controls");
+            tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
+
+            
+            tabbedPane.addTab("Mixer", icon, card2,
+                  "DJ Mixing controls");
+            tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
+            
+            
+            
+            this.getContentPane().add(tabbedPane);
+            
+            
+            
             this.pack();
 		this.setVisible(true);
 		
